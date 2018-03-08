@@ -13,18 +13,20 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 
+import com.example.jiongyi.foodemblem.fragment.HomeFragment;
 import com.example.jiongyi.foodemblem.fragment.ReservationFragment;
 
 /**
  * Created by JiongYi on 4/3/2018.
  */
 
-public class HomeActivity extends AppCompatActivity implements ReservationFragment.OnFragmentInteractionListener {
+public class HomeActivity extends AppCompatActivity implements ReservationFragment.OnFragmentInteractionListener,
+HomeFragment.OnFragmentInteractionListener{
 
     private FragmentManager fragmentManager;
     private DrawerLayout mDrawerLayout;
     private ReservationFragment reservationFragment;
-
+    private HomeFragment homeFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -35,10 +37,14 @@ public class HomeActivity extends AppCompatActivity implements ReservationFragme
         mDrawerLayout = findViewById(R.id.drawer_layout);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.emblemtoolbar);
         setSupportActionBar(myToolbar);
+        fragmentManager = getSupportFragmentManager();
         ActionBar actionbar = getSupportActionBar();
         actionbar.setDisplayHomeAsUpEnabled(true);
         actionbar.setHomeAsUpIndicator(R.drawable.ic_menu);
-
+        //Home Fragment
+        homeFragment = HomeFragment.newInstance("","");
+        fragmentManager.beginTransaction().replace(R.id.fragment_frame,homeFragment).commit();
+        //
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(
                 new NavigationView.OnNavigationItemSelectedListener() {
@@ -52,14 +58,15 @@ public class HomeActivity extends AppCompatActivity implements ReservationFragme
                         if (id == R.id.nav_reservation){
                             fragclass = ReservationFragment.class;
                         }
+                        else if (id == R.id.nav_home){
+                            fragclass = HomeFragment.class;
+                        }
                         try {
                             fragment = (Fragment)fragclass.newInstance();
                         }catch (Exception e) {
                             e.printStackTrace();
                         }
-                        FragmentManager fragmentManager = getSupportFragmentManager();
                         fragmentManager.beginTransaction().replace(R.id.fragment_frame, fragment).commit();
-
                         return true;
                     }
                 });
