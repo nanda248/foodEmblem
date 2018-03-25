@@ -15,13 +15,14 @@ import android.view.MenuItem;
 
 import com.example.jiongyi.foodemblem.fragment.HomeFragment;
 import com.example.jiongyi.foodemblem.fragment.ReservationFragment;
+import com.example.jiongyi.foodemblem.fragment.RestaurantMenuFragment;
 
 /**
  * Created by JiongYi on 4/3/2018.
  */
 
 public class HomeActivity extends AppCompatActivity implements ReservationFragment.OnFragmentInteractionListener,
-HomeFragment.OnFragmentInteractionListener{
+HomeFragment.OnFragmentInteractionListener, RestaurantMenuFragment.OnFragmentInteractionListener {
 
     private FragmentManager fragmentManager;
     private DrawerLayout mDrawerLayout;
@@ -44,7 +45,7 @@ HomeFragment.OnFragmentInteractionListener{
         //Home Fragment
         homeFragment = HomeFragment.newInstance("","");
         fragmentManager.beginTransaction().replace(R.id.fragment_frame,homeFragment).commit();
-        //
+        
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(
                 new NavigationView.OnNavigationItemSelectedListener() {
@@ -84,5 +85,10 @@ HomeFragment.OnFragmentInteractionListener{
     @Override
     public void onFragmentInteraction(Uri uri)
     {
+    }
+
+    @Override
+    public void onBackPressed(){
+
     }
 }

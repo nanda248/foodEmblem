@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/dishGrid"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/dishImg"
+        android:layout_width="125dp"
+        android:layout_height="125dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="10dp"
+        android:cropToPadding="false"
+        app:srcCompat="@drawable/chickenchop" />
+
+    <TextView
+        android:id="@+id/dishNameLbl"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="14dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="11dp"
+        android:textStyle="bold"
+        android:layout_toEndOf="@+id/dishImg"
+        android:layout_toRightOf="@+id/dishImg"
+        android:text="TextView" />
+
+    <TextView
+        android:id="@+id/dishDescLbl"
+        android:layout_width="220dp"
+        android:layout_height="60dp"
+        android:textSize="12dp"
+        android:layout_alignLeft="@+id/dishNameLbl"
+        android:layout_alignStart="@+id/dishNameLbl"
+        android:layout_below="@+id/dishNameLbl"
+        android:text="TextView" />
+
+    <TextView
+        android:id="@+id/dishPriceLbl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/dishDescLbl"
+        android:layout_alignRight="@+id/dishDescLbl"
+        android:layout_below="@+id/dishDescLbl"
+        android:textColor="@color/colorBlack"
+        android:layout_marginTop="5dp"
+        android:text="TextView" />
+
+</RelativeLayout>

@@ -1,17 +1,50 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_height="match_parent"
     tools:context="com.example.jiongyi.foodemblem.fragment.HomeFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-
     <ImageView
-        android:id="@+id/imageViewHome"
+        android:id="@+id/imgview"
+        android:layout_width="match_parent"
+        android:layout_height="225dp"
+        android:src="@drawable/emblemhome" />
+
+    <SearchView
+        android:id="@+id/searchView"
+        android:layout_width="325dp"
+        android:layout_height="40dp"
+        android:theme="@style/AppSearchView"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="20dp"
+        android:textSize="15sp"
+        android:background="@color/colorWhite" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="225dp"
+        android:orientation="vertical">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Featured Restaurants"
+            android:layout_marginLeft="20dp"
+            android:textSize="40px"
+            android:textColor="@color/colorBlack"
+            android:textStyle="bold"/>
+    <GridView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/restaurantGrid"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="285dp"
-        app:srcCompat="@drawable/emblemhome" />
+        android:columnWidth="134dp"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:horizontalSpacing="10dp"
+        android:numColumns="auto_fit"
+        android:stretchMode="columnWidth"
+        android:verticalSpacing="10dp" />
+    </LinearLayout>
 
 </FrameLayout>
