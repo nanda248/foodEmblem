@@ -38,12 +38,60 @@
         android:layout_gravity="center"
         android:background="@color/table"
         android:text="Reserve Now" />
-</FrameLayout>
 
+</FrameLayout>
     <ListView
         android:id="@+id/menuList"
+        android:layout_width="wrap_content"
+        android:layout_height="730px"
+        android:layout_marginTop="5dp" />
+
+    <RelativeLayout
+        android:id="@+id/checkOutBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="5dp"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:background="@android:drawable/btn_default"
+        android:clickable="true"
+        android:visibility="visible">
+
+        <TextView
+            android:id="@+id/totalLbl"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:textAlignment="center"
+            android:text="$30.00"
+            android:layout_marginLeft="10dp"
+            android:textColor="@color/colorWhite"
+            android:textStyle="bold"
+            android:visibility="visible" />
+
+        <TextView
+            android:id="@+id/qtydish"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:textAlignment="center"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="10dp"
+            android:text="12"
+            android:textColor="@color/colorWhite"
+            android:textStyle="bold"
+            android:visibility="visible" />
+
+        <TextView
+            android:id="@+id/checkOut"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:text="CheckOut"
+            android:textColor="@color/colorWhite"
+            android:textSize="18dp"
+            android:textStyle="bold"
+            android:visibility="visible" />
+    </RelativeLayout>
 
 </LinearLayout>

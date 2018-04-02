@@ -9,4 +9,5 @@
     <color name="table">#d47b1a</color>
     <color name="colorBlack">#000000</color>
     <color name = "colorGreen">#00ff00</color>
+    <color name = "checkOutGreen">#43a421</color>
 </resources>

@@ -2,6 +2,7 @@ package com.example.jiongyi.foodemblem.fragment;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -31,6 +32,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+
+import static android.content.Context.MODE_PRIVATE;
 
 
 public class HomeFragment extends Fragment {
@@ -82,7 +85,14 @@ public class HomeFragment extends Fragment {
         searchView.setFocusable(false);
         searchView.setIconified(false);
         searchView.clearFocus();
-
+        //Promoreserve is the function when customers directly click the promo notification
+        SharedPreferences sp = getContext().getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+//        Boolean promoreserve = sp.getBoolean("promoreserve",false);
+//        if (promoreserve == true){
+//            int promorestid = getArguments().getInt("RestaurantId");
+//            sp.edit().remove("promoreserve").apply();
+//            navigateToRestaurant(promorestid);
+//        }
         final ProgressDialog dialog = new ProgressDialog(getContext());
         loadRestaurants(dialog,view);
         return view;
@@ -130,7 +140,7 @@ public class HomeFragment extends Fragment {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://10.0.2.2:8080/FoodEmblemV1-war/Resources/Restaurant");
+                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/Restaurant");
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -163,14 +173,7 @@ public class HomeFragment extends Fragment {
                         @Override
                         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                             int restid = view.getId();
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("RestaurantId" , restid);
-                            RestaurantMenuFragment restaurantMenu = new RestaurantMenuFragment();
-                            restaurantMenu.setArguments(bundle);
-                            FragmentManager fragmentManager = getFragmentManager();
-                            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                            fragmentTransaction.replace(R.id.fragment_frame, restaurantMenu);
-                            fragmentTransaction.commit();
+                            navigateToRestaurant(restid);
                         }
                     });
                     ArrayList<Restaurant> restaurantArrayList = new ArrayList<Restaurant>();
@@ -198,5 +201,17 @@ public class HomeFragment extends Fragment {
                 }
             }
         }.execute();
+    }
+
+    public void navigateToRestaurant(int restaurantId){
+        Bundle bundle = new Bundle();
+        bundle.putInt("RestaurantId" , restaurantId);
+        bundle.putBoolean("fromOrder",false);
+        RestaurantMenuFragment restaurantMenu = new RestaurantMenuFragment();
+        restaurantMenu.setArguments(bundle);
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragment_frame, restaurantMenu);
+        fragmentTransaction.commit();
     }
 }

@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.support.annotation.NonNull;
@@ -22,6 +23,7 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -197,10 +199,9 @@ public class LoginActivity extends AppCompatActivity {
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public void UserLoginTask(String email, String password)  {
+    public void UserLoginTask(final String email, String password)  {
         final String mEmail = email;
         final String mPassword = password;
-
         new AsyncTask<Void, Void, String>() {
             @Override
             protected void onPreExecute()
@@ -210,7 +211,7 @@ public class LoginActivity extends AppCompatActivity {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://10.0.2.2:8080/FoodEmblemV1-war/Resources/Customer/login/" + mEmail + "/" + mPassword);
+                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/Customer/login/" + mEmail + "/" + mPassword);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -245,6 +246,10 @@ public class LoginActivity extends AppCompatActivity {
                         success = true;
                     }
                     if (success) {
+                        SharedPreferences sp = getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+                        sp.edit().putBoolean("isloggedin", true).apply();
+                        sp.edit().putString("UserEmail",email).apply();
+                        Log.i("Email",email);
                         Intent i = new Intent(LoginActivity.this, HomeActivity.class);
                         startActivity(i);
                     } else {

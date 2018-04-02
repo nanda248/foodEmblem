@@ -1,10 +1,15 @@
 package com.example.jiongyi.foodemblem.room;
 
+import java.io.Serializable;
+import java.text.DecimalFormat;
+
 /**
  * Created by JiongYi on 22/3/2018.
  */
 
-public class RestaurantDish {
+public class RestaurantDish implements Serializable {
+    private int dishid;
+    private int quantity;
     private String category;
     private int imagePath;
     private String name;
@@ -14,12 +19,18 @@ public class RestaurantDish {
     public RestaurantDish(){
 
     }
-    public RestaurantDish(String category, int imagePath, String name, Double price, String desc){
+
+    public RestaurantDish(int dishid,double price){
+        this.dishid = dishid;
+        this.price = price;
+    }
+    public RestaurantDish(String category, int imagePath, String name, Double price, String desc, int dishid){
         this.category = category;
         this.imagePath = imagePath;
         this.name = name;
         this.price = price;
         this.desc = desc;
+        this.dishid = dishid;
     }
 
     public String getCategory() {
@@ -47,7 +58,7 @@ public class RestaurantDish {
     }
 
     public Double getPrice() {
-        return price;
+        return  price;
     }
 
     public void setPrice(Double price) {
@@ -60,5 +71,21 @@ public class RestaurantDish {
 
     public void setDesc(String desc) {
         this.desc = desc;
+    }
+
+    public int getDishid() {
+        return dishid;
+    }
+
+    public void setDishid(int dishid) {
+        this.dishid = dishid;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 }

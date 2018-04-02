@@ -1,18 +1,17 @@
 package com.example.jiongyi.foodemblem;
 
 import android.content.Intent;
-import android.graphics.Color;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
+import com.estimote.coresdk.common.requirements.SystemRequirementsChecker;
+import com.example.jiongyi.foodemblem.service.FoodEmblemService;
 import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 
 
@@ -30,9 +29,15 @@ public class StartupPageActivity extends AppCompatActivity {
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .build();
-
         Intent intent = getIntent();
         setContentView(R.layout.activity_startuppage);
+        Intent service = new Intent(this, FoodEmblemService.class);
+        startService(service);
+        SharedPreferences sp = getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+        if (sp.getBoolean("isloggedin",false) == true){
+            Intent i = new Intent(this,HomeActivity.class);
+            startActivity(i);
+        }
         Toolbar myToolbar = (Toolbar) findViewById(R.id.emblemtoolbar);
         setSupportActionBar(myToolbar);
         Button button = (Button) findViewById(R.id.signin);
@@ -44,5 +49,17 @@ public class StartupPageActivity extends AppCompatActivity {
             }
         });
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
 
+        SystemRequirementsChecker.checkWithDefaultDialogs(this);
+    }
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_HOME);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
 }

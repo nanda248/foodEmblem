@@ -36,11 +36,12 @@ public class RestuarantDishAdapter extends ArrayAdapter<RestaurantDish> {
         TextView dishDesc = (TextView) convertView.findViewById(R.id.dishDescLbl);
         TextView dishPrice = (TextView) convertView.findViewById(R.id.dishPriceLbl);
         ImageView img = (ImageView) convertView.findViewById(R.id.dishImg);
+        convertView.setId(restaurantDish.getDishid());
         // Populate the data into the template view using the data object
         try {
             dishName.setText(String.valueOf(restaurantDish.getName()));
             dishDesc.setText(restaurantDish.getDesc());
-            dishPrice.setText("$"+restaurantDish.getPrice().toString());
+            dishPrice.setText("$"+ String.format("%.2f" ,restaurantDish.getPrice()));
             img.setImageResource(restaurantDish.getImagePath());
         }
         catch (Exception ex){

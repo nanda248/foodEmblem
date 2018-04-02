@@ -3,6 +3,7 @@ package com.example.jiongyi.foodemblem;
 import android.app.DialogFragment;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.jiongyi.foodemblem.fragment.ReservationDialogFragment;
+import com.facebook.share.Share;
 
 import org.json.JSONObject;
 
@@ -89,7 +91,7 @@ public class ReserveSeat extends AppCompatActivity {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://10.0.2.2:8080/FoodEmblemV1-war/Resources/CustomerReservation/retrieveAllocatedSeat/" + restid + "/" + pax);
+                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/CustomerReservation/retrieveAllocatedSeat/" + restid + "/" + pax);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -153,7 +155,7 @@ public class ReserveSeat extends AppCompatActivity {
                 String data = "";
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://10.0.2.2:8080/FoodEmblemV1-war/Resources/CustomerReservation");
+                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/CustomerReservation");
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     httpURLConnection.setRequestMethod("PUT");
@@ -161,7 +163,9 @@ public class ReserveSeat extends AppCompatActivity {
                     httpURLConnection.setRequestProperty("Content-Type", "application/json");
                     httpURLConnection.setRequestProperty("Accept", "application/json");
                     JSONObject reservationReq = new JSONObject();
-                    reservationReq.put("email","Jy@gmail.com");
+                    SharedPreferences sp = getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+                    String email = sp.getString("UserEmail","");
+                    reservationReq.put("email",email);
                     reservationReq.put("noOfPax",pax);
                     reservationReq.put("seatId",seatid);
                     DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());

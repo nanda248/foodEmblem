@@ -3,6 +3,7 @@ package com.example.jiongyi.foodemblem.fragment;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -40,6 +41,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+
+import static android.content.Context.MODE_PRIVATE;
 
 
 public class ReservationFragment extends Fragment {
@@ -161,9 +164,10 @@ public class ReservationFragment extends Fragment {
                     else {
                         status = "Inactive";
                     }
-                    String email = "Jy@gmail.com";
+                    SharedPreferences sp = getContext().getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+                    String email = sp.getString("UserEmail","");
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://10.0.2.2:8080/FoodEmblemV1-war/Resources/CustomerReservation/getReservations/"+email+"/"+status);
+                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/CustomerReservation/getReservations/"+email+"/"+status);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());

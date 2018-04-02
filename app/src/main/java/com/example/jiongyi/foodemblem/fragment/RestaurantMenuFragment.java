@@ -3,6 +3,7 @@ package com.example.jiongyi.foodemblem.fragment;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -11,18 +12,22 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.example.jiongyi.foodemblem.AddToOrder;
+import com.example.jiongyi.foodemblem.CheckOutActivity;
 import com.example.jiongyi.foodemblem.R;
 import com.example.jiongyi.foodemblem.ReserveSeat;
 import com.example.jiongyi.foodemblem.custom_adapters.RestuarantDishAdapter;
+import com.example.jiongyi.foodemblem.room.CustomerOrder;
 import com.example.jiongyi.foodemblem.room.RestaurantDish;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -31,6 +36,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+
+import static android.content.Context.MODE_PRIVATE;
+import static android.view.View.GONE;
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -85,8 +95,14 @@ public class RestaurantMenuFragment extends Fragment {
         TextView txtview = ((AppCompatActivity)getActivity()).findViewById(R.id.toolbar_title);
         txtview.setText("Dishes");
         final int restid = getArguments().getInt("RestaurantId");
+        Boolean fromorder = getArguments().getBoolean("fromOrder");
         loadRestaurantName(restid, view);
         Button reserveBtn = (Button)view.findViewById(R.id.reserveBtn);
+        if (fromorder == true){
+            txtview.setText("Order");
+            reserveBtn.setVisibility(INVISIBLE);
+        }
+        checkHasReservation(reserveBtn);
         reserveBtn.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 Intent intent = new Intent(getContext(),ReserveSeat.class);
@@ -99,6 +115,45 @@ public class RestaurantMenuFragment extends Fragment {
         });
         final ProgressDialog dialog = new ProgressDialog(getContext());
         loadRestaurantDishes(dialog,view,restid);
+        //Check if cart has item, then show information
+        RelativeLayout checkOutBtn = (RelativeLayout) view.findViewById(R.id.checkOutBtn);
+        SharedPreferences sp = getContext().getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+        Boolean isordering = sp.getBoolean("IsOrdering",false);
+        TextView totalLbl = (TextView)view.findViewById(R.id.totalLbl);
+        TextView qtyLbl = (TextView)view.findViewById(R.id.qtydish);
+        if (isordering == true && fromorder == true){
+            //User is ordering already, display button to checkout along with updated price and dishes
+            int dishcount = 0;
+            double total = 0;
+            final CustomerOrder customerOrder = (CustomerOrder) getArguments().getSerializable("CustomerOrder");
+            for (int i = 0; i < customerOrder.getOrders().size(); i++){
+                RestaurantDish restaurantDish = customerOrder.getOrders().get(i);
+                total += (restaurantDish.getQuantity() * restaurantDish.getPrice());
+            }
+            dishcount = customerOrder.getOrders().size();
+            totalLbl.setText("$" + String.format("%.2f",total));
+            qtyLbl.setText(String.valueOf(dishcount));
+            checkOutBtn.setVisibility(VISIBLE);
+            checkOutBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent i = new Intent(getContext(), CheckOutActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("CustomerOrder",customerOrder);
+                    i.putExtras(bundle);
+                    startActivity(i);
+                }
+            });
+            ListView listView = view.findViewById(R.id.menuList);
+            listView.getLayoutParams().height = 620;
+            reserveBtn.setVisibility(INVISIBLE);
+        }
+        else {
+            ListView listView = view.findViewById(R.id.menuList);
+            listView.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            checkOutBtn.setVisibility(GONE);
+        }
+        checkOutBtn.setBackgroundColor(getResources().getColor(R.color.checkOutGreen));
         return view;
     }
 
@@ -144,7 +199,7 @@ public class RestaurantMenuFragment extends Fragment {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://10.0.2.2:8080/FoodEmblemV1-war/Resources/RestaurantDish/" + restaurantId);
+                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/RestaurantDish/" + restaurantId);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -182,6 +237,7 @@ public class RestaurantMenuFragment extends Fragment {
                             String dishname = dish.getString("name");
                             String dishdesc = dish.getString("category");
                             Double dishprice = dish.getDouble("price");
+                            int dishid = dish.getInt("id");
                             int imgpath = 0;
                             if (dishdesc.equals("Seafood")){
                                 dishdesc = "Delicious salmon pasta made from fresh eggs long with herb grilled salmon freshly catched daily";
@@ -201,11 +257,37 @@ public class RestaurantMenuFragment extends Fragment {
                                 imgpath = R.drawable.veggie;
 
                             }
-                            RestaurantDish dishobj = new RestaurantDish("",imgpath,dishname,dishprice,dishdesc);
+                            RestaurantDish dishobj = new RestaurantDish("",imgpath,dishname,dishprice,dishdesc,dishid);
                             restaurantDishesArrayList.add(dishobj);
                         }
                         RestuarantDishAdapter adapter = new RestuarantDishAdapter(getContext(), restaurantDishesArrayList);
                         listView.setAdapter(adapter);
+                        Boolean fromorder = getArguments().getBoolean("fromOrder");
+                        SharedPreferences sp = getContext().getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+                        final Boolean isordering = sp.getBoolean("IsOrdering",false);
+                        TextView txtview = ((AppCompatActivity)getActivity()).findViewById(R.id.toolbar_title);
+                        if (txtview.getText().equals("Order")){
+                            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                @Override
+                                public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
+                                    RestaurantDish restaurantDish = (RestaurantDish) adapter.getItemAtPosition(position);
+//                                    int dishid = restaurantDish.getDishid();
+//                                    String dishname = restaurantDish.getName();
+//                                    String dishdesc = restaurantDish.getDesc();
+//                                    Double dishprice = restaurantDish.getPrice();
+                                    Bundle bundle = new Bundle();
+                                    if (isordering == true) {
+                                        CustomerOrder customerOrder = (CustomerOrder) getArguments().getSerializable("CustomerOrder");
+                                        bundle.putSerializable("CustomerOrder",customerOrder);
+                                    }
+                                    bundle.putSerializable("dish",restaurantDish);
+                                    bundle.putInt("RestaurantId",restaurantId);
+                                    Intent intent = new Intent(getContext(), AddToOrder.class);
+                                    intent.putExtras(bundle);
+                                    startActivity(intent);
+                                }
+                            });
+                        }
                     }
                 }
                 catch (Exception ex) {
@@ -229,7 +311,7 @@ public class RestaurantMenuFragment extends Fragment {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://10.0.2.2:8080/FoodEmblemV1-war/Resources/Restaurant/getRestaurantById/" + restaurantId);
+                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/Restaurant/getRestaurantById/" + restaurantId);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -260,6 +342,63 @@ public class RestaurantMenuFragment extends Fragment {
                         JSONObject jsonObject = new JSONObject(jsonString);
                         textView.setText(jsonObject.getJSONObject("restaurant").getString("name"));
                     }
+                catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+
+            }
+        }.execute();
+    }
+
+    public void checkHasReservation(final Button reserveBtn){
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected void onPreExecute()
+            {
+
+            }
+            @Override
+            protected String doInBackground(Void... voids) {
+                try {
+                    System.err.println("**** Calling rest web service");
+                    SharedPreferences sp = getContext().getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+                    String email = sp.getString("UserEmail","");
+                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/CustomerReservation/checkHasReservation/" + email);
+                    // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
+                    HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                    InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                    StringBuilder stringBuilder = new StringBuilder();
+
+                    String line = null;
+
+                    while ((line = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(line);
+                    }
+                    return stringBuilder.toString();
+
+                } catch (Exception ex) {
+
+                    System.out.println("error calling API");
+                    //Toast.makeText(getApplicationContext(), "Error calling REST web service", Toast.LENGTH_LONG).show();
+
+                    ex.printStackTrace();
+                }
+                return "";
+            }
+
+            @Override
+            protected void onPostExecute(String jsonString) {
+                try {
+                    JSONObject jsonObject = new JSONObject(jsonString);
+                    Boolean hasReservation = jsonObject.getBoolean("hasReservation");
+                    if (hasReservation == true){
+                        reserveBtn.setEnabled(false);
+                    }
+                    else {
+                        reserveBtn.setEnabled(true);
+                    }
+                }
                 catch (Exception ex) {
                     ex.printStackTrace();
                 }
