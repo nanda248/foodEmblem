@@ -211,7 +211,7 @@ public class LoginActivity extends AppCompatActivity {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/Customer/login/" + mEmail + "/" + mPassword);
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Customer/login/" + mEmail + "/" + mPassword);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());

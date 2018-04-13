@@ -140,7 +140,7 @@ public class HomeFragment extends Fragment {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/Restaurant");
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Restaurant/retrieveAllRestaurants");
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());

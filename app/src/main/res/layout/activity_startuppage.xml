@@ -84,6 +84,15 @@
             android:background="@color/table"
             android:text="Sign In" />
 
+        <TextView
+            android:id="@+id/registerLink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:clickable="true"
+            android:layout_marginBottom="12dp"
+            android:text="Dont have an account? Sign up here" />
 
 
     </RelativeLayout>

@@ -7,9 +7,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.estimote.coresdk.common.requirements.SystemRequirementsChecker;
 import com.example.jiongyi.foodemblem.service.FoodEmblemService;
+import com.example.jiongyi.foodemblem.service.ScanningService;
 import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -32,6 +34,8 @@ public class StartupPageActivity extends AppCompatActivity {
         Intent intent = getIntent();
         setContentView(R.layout.activity_startuppage);
         Intent service = new Intent(this, FoodEmblemService.class);
+        Intent beaconservice = new Intent(this, ScanningService.class);
+        startService(beaconservice);
         startService(service);
         SharedPreferences sp = getSharedPreferences("FoodEmblem",MODE_PRIVATE);
         if (sp.getBoolean("isloggedin",false) == true){
@@ -48,11 +52,18 @@ public class StartupPageActivity extends AppCompatActivity {
                 startActivity(i);
             }
         });
+        TextView reglink = (TextView)findViewById(R.id.registerLink);
+        reglink.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(StartupPageActivity.this,RegisterActivity.class);
+                startActivity(i);
+            }
+        });
     }
     @Override
     protected void onResume() {
         super.onResume();
-
         SystemRequirementsChecker.checkWithDefaultDialogs(this);
     }
     @Override

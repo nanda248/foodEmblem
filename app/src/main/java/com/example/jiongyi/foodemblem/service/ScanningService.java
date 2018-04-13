@@ -1,6 +1,6 @@
-package com.example.jiongyi.foodemblem.beacon;
+package com.example.jiongyi.foodemblem.service;
 
-import android.app.Application;
+import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -8,17 +8,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
-import android.os.CountDownTimer;
+import android.os.Handler;
 import android.util.Log;
 
 import com.estimote.coresdk.observation.region.beacon.BeaconRegion;
 import com.estimote.coresdk.recognition.packets.Beacon;
 import com.estimote.coresdk.service.BeaconManager;
 import com.example.jiongyi.foodemblem.HomeActivity;
-import com.example.jiongyi.foodemblem.LoginActivity;
 import com.example.jiongyi.foodemblem.R;
 import com.example.jiongyi.foodemblem.StartupPageActivity;
-import com.facebook.share.Share;
 
 import org.json.JSONObject;
 
@@ -28,70 +26,83 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import kotlin.Unit;
-import kotlin.jvm.functions.Function1;
-
 /**
- * Created by JiongYi on 26/3/2018.
+ * Created by JiongYi on 2/4/2018.
  */
 
-public class PromotionBeacon extends Application {
+public class ScanningService extends IntentService {
     private BeaconManager beaconManager;
     private BeaconManager seatBeaconManager;
     private BeaconRegion region;
     private int major;
     private int minor;
-    private String sensorid;
     private int rangemajor;
     private int rangeminor;
+    private String sensorid;
+    private Handler mHandler;
+    public ScanningService() {
+        super("ScanningService");
+    }
     @Override
     public void onCreate() {
         super.onCreate();
-        beaconManager = new BeaconManager(getApplicationContext());
-        region = new BeaconRegion("ranged region",
-                UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D"), null, null);
+        mHandler = new Handler();
+    }
 
-        beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        mHandler.post(new Runnable() {
             @Override
-            public void onServiceReady() {
-                beaconManager.startRanging(region);
+            public void run() {
+                Log.i("Run","runnable");
+                beaconManager = new BeaconManager(getApplicationContext());
+                region = new BeaconRegion("ranged region",
+                        UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D"), null, null);
+
+                beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
+                    @Override
+                    public void onServiceReady() {
+                        beaconManager.startRanging(region);
+                    }
+                });
+                beaconManager.setRangingListener(new BeaconManager.BeaconRangingListener() {
+                    @Override
+                    public void onBeaconsDiscovered(BeaconRegion region, List<Beacon> list) {
+                        SharedPreferences sp = getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+                        String email = sp.getString("UserEmail","");
+                        if (!list.isEmpty()) {
+                            if (sp.getBoolean("isloggedin",false) == true) {
+                                //Monitoring service
+                                if (sp.getBoolean("FocusScanTable",false) == false) {
+                                    retrieveReservationSeat(email);
+                                    Log.i("retrieveReservationSeat","retrieveReservationSeatCalled");
+                                }
+                            }
+                            Beacon nearestBeacon = list.get(0);
+                            //If nearest beacon is still the same, stop sending notification
+                            if (rangemajor == nearestBeacon.getMajor() && rangeminor == nearestBeacon.getMinor()){
+                                rangemajor = nearestBeacon.getMajor();
+                                rangeminor = nearestBeacon.getMinor();
+                                Log.i("rangemajor", String.valueOf(rangemajor));
+                                Log.i("rangeminor", String.valueOf(rangeminor));
+                            }
+                            else {
+                                //New beacon, retrieve promotion from it if any
+                                rangemajor = nearestBeacon.getMajor();
+                                rangeminor = nearestBeacon.getMinor();
+                                Log.i("nearestmajor", String.valueOf(rangemajor));
+                                Log.i("nearestminor", String.valueOf(rangeminor));
+                                retrievePromotionsFromBeacon(rangemajor,rangeminor);
+                            }
+
+                        }
+                    }
+                });
             }
         });
-        beaconManager.setRangingListener(new BeaconManager.BeaconRangingListener() {
-            @Override
-            public void onBeaconsDiscovered(BeaconRegion region, List<Beacon> list) {
-                SharedPreferences sp = getSharedPreferences("FoodEmblem",MODE_PRIVATE);
-                String email = sp.getString("UserEmail","");
-                if (sp.getBoolean("isloggedin",false) == true) {
-                    //Monitoring service
-                    if (sp.getBoolean("FocusScanTable",false) == false) {
-                        retrieveReservationSeat(email);
-                    }
-                }
-                if (!list.isEmpty()) {
-                    Beacon nearestBeacon = list.get(0);
-                    //If nearest beacon is still the same, stop sending notification
-                    if (rangemajor == nearestBeacon.getMajor() && rangeminor == nearestBeacon.getMinor()){
-                        rangemajor = nearestBeacon.getMajor();
-                        rangeminor = nearestBeacon.getMinor();
-                        Log.i("rangemajor", String.valueOf(rangemajor));
-                        Log.i("rangeminor", String.valueOf(rangeminor));
-                    }
-                    else {
-                        //New beacon, retrieve promotion from it if any
-                        rangemajor = nearestBeacon.getMajor();
-                        rangeminor = nearestBeacon.getMinor();
-                        retrievePromotionsFromBeacon(rangemajor,rangeminor);
-                    }
-                    Log.i("Beacon","Beacon found");
-                }
-        }
-        });
-
     }
     public void showNotification(String title, String message, int restaurantid) {
         SharedPreferences sp = getSharedPreferences("FoodEmblem",MODE_PRIVATE);
@@ -132,7 +143,7 @@ public class PromotionBeacon extends Application {
                 try {
                     String sensorid = major+"_"+minor;
                     Log.i("Webservice","**** Calling notification web service");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Promotion/retrieveRestaurantPromoFromBeacon/" + sensorid);
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Promotion/retrieveRestaurantPromoFromBeacon/"+sensorid);
                     Log.i("WSurl",url.toString());
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
@@ -163,7 +174,7 @@ public class PromotionBeacon extends Application {
                     if (!jsonString.equals("{}")){
                         JSONObject jsonObject = new JSONObject(jsonString);
                         JSONObject promo = jsonObject.getJSONObject("promotion");
-                        JSONObject restaurant = promo.getJSONObject("restaurant");
+                        JSONObject restaurant = jsonObject.getJSONObject("restaurant");
                         String restname = restaurant.getString("name");
                         double promopercentage = promo.getDouble("promotionPercentage");
                         String description = promo.getString("description");
@@ -181,13 +192,13 @@ public class PromotionBeacon extends Application {
         }.execute();
     }
 
-    public void retrieveReservationSeat(final String email){
+    public void retrieveReservationSeat(final String email) {
         new AsyncTask<Void, Void, String>() {
             @Override
-            protected void onPreExecute()
-            {
+            protected void onPreExecute() {
 
             }
+
             @Override
             protected String doInBackground(Void... voids) {
                 try {
@@ -219,47 +230,87 @@ public class PromotionBeacon extends Application {
             @Override
             protected void onPostExecute(String jsonString) {
                 try {
-                    if (!jsonString.equals("{}")){
+                    if (!jsonString.equals("{}")) {
                         JSONObject jsonObject = new JSONObject(jsonString);
                         sensorid = jsonObject.getJSONObject("reservationSeating").getString("sensorId");
                         String [] majorminor = sensorid.split("_");
                         major = Integer.parseInt(majorminor[0].toString());
                         minor = Integer.parseInt(majorminor[1].toString());
-                        seatBeaconManager = new BeaconManager(getApplicationContext());
-                        seatBeaconManager.connect(new BeaconManager.ServiceReadyCallback() {
+                        Log.i("tablemajor", String.valueOf(major));
+                        Log.i("tableminor", String.valueOf(minor));
+                        beaconManager = new BeaconManager(getApplicationContext());
+                        beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
                             @Override
                             public void onServiceReady() {
                                 //Focus monitoring on customer reservation's seating's beacon
-                                seatBeaconManager.startMonitoring(new BeaconRegion(
+                                beaconManager.startMonitoring(new BeaconRegion(
                                         "monitored region",
                                         UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D"),
                                         major, minor));
                             }
                         });
-                        seatBeaconManager.setBackgroundScanPeriod(1000, 0);
-                        seatBeaconManager.setMonitoringListener(new BeaconManager.BeaconMonitoringListener() {
+                        beaconManager.setBackgroundScanPeriod(2000, 0);
+                        beaconManager.setMonitoringListener(new BeaconManager.BeaconMonitoringListener() {
                             @Override
                             public void onEnteredRegion(BeaconRegion region, List<Beacon> beacons) {
                                 //Able to order
                                 Log.i("Region", "Customer entered region");
-                                SharedPreferences sp = getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+                                SharedPreferences sp = getSharedPreferences("FoodEmblem", MODE_PRIVATE);
                                 sp.edit().putBoolean("AtTable", true).apply();
-                                sp.edit().putBoolean("FocusScanTable",true).apply();;
+                                sp.edit().putBoolean("FocusScanTable", true).apply();
+                                int rerid = sp.getInt("activereservation",0);
+                                updatePax(rerid,1);
                             }
+
                             @Override
                             public void onExitedRegion(BeaconRegion region) {
                                 //If exit for 1 mins, set status to inactive and attable to false
                                 Log.i("Beacon", "User has left table");
-                                SharedPreferences sp = getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+                                SharedPreferences sp = getSharedPreferences("FoodEmblem", MODE_PRIVATE);
                                 sp.edit().putBoolean("AtTable", false).apply();
+                                int rerid = sp.getInt("activereservation",0);
+                                updatePax(rerid,-1);
                             }
                         });
                     }
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     ex.printStackTrace();
                 }
 
+            }
+        }.execute();
+    }
+
+    public void updatePax(final int reservationid, final  int pax){
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... voids) {
+                try {
+                    String sensorid = major+"_"+minor;
+                    Log.i("Webservice","**** Calling notification web service");
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Restaurant/updateSeatingPax/" + reservationid + "/" + pax);
+                    Log.i("WSurl",url.toString());
+                    // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
+                    HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                    InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                    StringBuilder stringBuilder = new StringBuilder();
+
+                    String line = null;
+
+                    while ((line = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(line);
+                    }
+                    return stringBuilder.toString();
+
+                } catch (Exception ex) {
+
+                    System.out.println("error calling API");
+                    //Toast.makeText(getApplicationContext(), "Error calling REST web service", Toast.LENGTH_LONG).show();
+
+                    ex.printStackTrace();
+                }
+                return "";
             }
         }.execute();
     }

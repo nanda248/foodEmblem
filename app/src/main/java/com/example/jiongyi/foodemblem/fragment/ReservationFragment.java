@@ -167,7 +167,7 @@ public class ReservationFragment extends Fragment {
                     SharedPreferences sp = getContext().getSharedPreferences("FoodEmblem",MODE_PRIVATE);
                     String email = sp.getString("UserEmail","");
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/CustomerReservation/getReservations/"+email+"/"+status);
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/CustomerReservation/getReservations/"+email+"/"+status);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());

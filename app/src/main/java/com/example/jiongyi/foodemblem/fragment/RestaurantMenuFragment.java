@@ -1,22 +1,35 @@
 package com.example.jiongyi.foodemblem.fragment;
 
 import android.app.ProgressDialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.jiongyi.foodemblem.AddToOrder;
 import com.example.jiongyi.foodemblem.CheckOutActivity;
@@ -25,17 +38,22 @@ import com.example.jiongyi.foodemblem.ReserveSeat;
 import com.example.jiongyi.foodemblem.custom_adapters.RestuarantDishAdapter;
 import com.example.jiongyi.foodemblem.room.CustomerOrder;
 import com.example.jiongyi.foodemblem.room.RestaurantDish;
+import com.example.jiongyi.foodemblem.service.MicrobitSensorService;
+import com.example.jiongyi.foodemblem.service.MicrobitUartService;
+import com.example.jiongyi.foodemblem.service.ScanningService;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import static android.content.Context.MODE_PRIVATE;
 import static android.view.View.GONE;
@@ -62,9 +80,21 @@ public class RestaurantMenuFragment extends Fragment {
     protected View mview;
 
     private OnFragmentInteractionListener mListener;
+    Handler handler;
+
+    private BluetoothAdapter bluetoothAdapter;
+    private BluetoothManager bluetoothManager;
+    private BluetoothAdapter.LeScanCallback leScanCallback;
+    private BluetoothGatt bluetoothGatt;
+    private HashMap<String, BluetoothDevice> bluetoothDevices;
+    private MicrobitUartBroadcastReceiver microbitUartBroadcastReceiver;
+
+    private Boolean connected;
 
     public RestaurantMenuFragment() {
         // Required empty public constructor
+        handler = new Handler();
+        bluetoothDevices = new HashMap<>();
     }
 
 
@@ -96,11 +126,24 @@ public class RestaurantMenuFragment extends Fragment {
         txtview.setText("Dishes");
         final int restid = getArguments().getInt("RestaurantId");
         Boolean fromorder = getArguments().getBoolean("fromOrder");
+        ImageButton callwaiter = (ImageButton)view.findViewById(R.id.callwaiterBtn);
         loadRestaurantName(restid, view);
         Button reserveBtn = (Button)view.findViewById(R.id.reserveBtn);
         if (fromorder == true){
             txtview.setText("Order");
             reserveBtn.setVisibility(INVISIBLE);
+            callwaiter.setVisibility(VISIBLE);
+            callwaiter.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    bluetoothManager = (BluetoothManager) getActivity().getSystemService(Context.BLUETOOTH_SERVICE);
+                    bluetoothAdapter = bluetoothManager.getAdapter();
+                    leScanCallback = new RestaurantMenuFragment.BleScanner();
+                    handler.postDelayed(new RestaurantMenuFragment.StopBleScannerThread(), 30 * 1000);     // I only Set to 30 seconds. Meaning if the phone cant find the Microbit bit in 30 second, it will stop.
+                    bluetoothAdapter.startLeScan(leScanCallback);
+                    System.err.println("Initiating BLE scan...");
+                }
+            });
         }
         checkHasReservation(reserveBtn);
         reserveBtn.setOnClickListener(new View.OnClickListener(){
@@ -145,13 +188,15 @@ public class RestaurantMenuFragment extends Fragment {
                 }
             });
             ListView listView = view.findViewById(R.id.menuList);
-            listView.getLayoutParams().height = 620;
+            //listView.getLayoutParams().height = 620;
+            listView.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
             reserveBtn.setVisibility(INVISIBLE);
         }
         else {
             ListView listView = view.findViewById(R.id.menuList);
             listView.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT;
-            checkOutBtn.setVisibility(GONE);
+            //checkOutBtn.setVisibility(GONE);
+            checkOutBtn.setVisibility(INVISIBLE);
         }
         checkOutBtn.setBackgroundColor(getResources().getColor(R.color.checkOutGreen));
         return view;
@@ -199,7 +244,7 @@ public class RestaurantMenuFragment extends Fragment {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/RestaurantDish/" + restaurantId);
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/RestaurantDish/" + restaurantId);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -311,7 +356,7 @@ public class RestaurantMenuFragment extends Fragment {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/Restaurant/getRestaurantById/" + restaurantId);
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Restaurant/getRestaurantById/" + restaurantId);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -363,7 +408,7 @@ public class RestaurantMenuFragment extends Fragment {
                     System.err.println("**** Calling rest web service");
                     SharedPreferences sp = getContext().getSharedPreferences("FoodEmblem",MODE_PRIVATE);
                     String email = sp.getString("UserEmail","");
-                    URL url = new URL("http://192.168.43.213:8080/FoodEmblemV1-war/Resources/CustomerReservation/checkHasReservation/" + email);
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/CustomerReservation/checkHasReservation/" + email);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -400,6 +445,232 @@ public class RestaurantMenuFragment extends Fragment {
                     }
                 }
                 catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+
+            }
+        }.execute();
+    }
+
+
+    //MICROBIT PAIRING BELOW
+    protected class BleScannerThread implements Runnable {
+        private BluetoothDevice bluetoothDevice;
+
+
+        public BleScannerThread() {
+            super();
+        }
+
+
+        public BleScannerThread(BluetoothDevice bluetoothDevice) {
+            this();
+
+            this.bluetoothDevice = bluetoothDevice;
+        }
+        @Override
+        public void run()
+        {
+            if(bluetoothDevice.getName() != null && bluetoothDevice.getName().equals(getString(R.string.key_microbit1Name)))  //go to String.xml there and add this  <string name="key_microbit1Name">BBC micro:bit</string>
+            {
+                System.err.println("BleScannerThread.run(): " + bluetoothDevice.getAddress());
+
+                bluetoothAdapter.stopLeScan(leScanCallback);
+                bluetoothDevices.put(getString(R.string.key_microbit1Name), bluetoothDevice);
+                microbitUartBroadcastReceiver = new RestaurantMenuFragment.MicrobitUartBroadcastReceiver();
+                IntentFilter intentFilter = new IntentFilter();
+                intentFilter.addAction(MicrobitUartService.ACTION_GATT_CONNECTED);
+                intentFilter.addAction(MicrobitUartService.ACTION_GATT_DISCONNECTED);
+                intentFilter.addAction(MicrobitUartService.ACTION_GATT_SERVICES_DISCOVERED);
+                intentFilter.addAction(MicrobitUartService.ACTION_DATA_AVAILABLE);
+                intentFilter.addAction(MicrobitUartService.ACTION_DATA_AVAILABLE_UART);
+                getActivity().registerReceiver(microbitUartBroadcastReceiver, intentFilter);
+
+                String action = MicrobitUartService.ACTION_MICROBIT_UART;
+
+                MicrobitUartService.startActionMicrobit(getActivity(), bluetoothDevice, action);
+            }
+        }
+    }
+
+    protected class StopBleScannerThread implements Runnable {
+        @Override
+        public void run() {
+            Boolean foundMicrobit = false;
+
+            if (bluetoothDevices.get(getString(R.string.key_microbit1Name)) != null)  //this one need to change to microbit address  later.
+            {
+                foundMicrobit = true;
+            }
+
+            bluetoothAdapter.stopLeScan(leScanCallback);
+
+            if (!foundMicrobit) {
+                System.err.println("BLE scanning timeout, unable to find BBC micro:bit 1!");
+            }
+        }
+    }
+
+    protected class MicrobitUartBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if (action.equals(MicrobitSensorService.ACTION_GATT_CONNECTED)) {
+                connected = true;
+            } else if (action.equals(MicrobitSensorService.ACTION_GATT_DISCONNECTED)) {
+                connected = false;
+            } else if (action.equals(MicrobitSensorService.ACTION_GATT_SERVICES_DISCOVERED)) {
+                System.err.println("*** Discovered the following services");
+                BluetoothGattService gattServiceMicrobitUart = intent.getParcelableExtra(MicrobitUartService.EXTRA_BLUETOOTH_GATT_SERVICE_MICROBIT_UART);
+
+                System.err.println("MicroBit UART Service: " + gattServiceMicrobitUart.getUuid().toString());
+            } else if (action.equals(MicrobitSensorService.ACTION_DATA_AVAILABLE)) {
+                System.err.println("Unexpected data!");
+            } else if (action.equals(MicrobitUartService.ACTION_DATA_AVAILABLE_UART)) {
+                System.err.println("**************(action.equals(MicrobitUartService.ACTION_DATA_AVAILABLE_UART))");
+                String microbitRequestValue = intent.getStringExtra(MicrobitSensorService.EXTRA_DATA_1);
+                //THE FORMAT WILL FOR FLIPPED Microbit is
+                //FE-Table<tableID>  Example  FE-Table2  or FE-Table1
+                //FE means Finish Eating
+                String message = microbitRequestValue.substring(0, 8);
+                String tableId = microbitRequestValue.substring(8);
+                String resttable = microbitRequestValue.substring(3,9);
+                Log.i("message",message);
+                Log.i("tableid",tableId);
+                if (message.equals("FE-Table")) //this means microbit has been flipped
+                {
+                    Log.i("Inside FE-Table",tableId);
+                    finishReservation(Long.parseLong(tableId));
+                } else if (message.equals("CW-Table")) {     //CW means call waiter
+                    //please write an async task to create new calling wairer requets . You can do it later
+                    callWaiter(resttable);
+                }
+            }
+        }
+    }
+
+
+    protected class BleScanner implements BluetoothAdapter.LeScanCallback
+    {
+        @Override
+        public void onLeScan(BluetoothDevice bluetoothDevice, int i, byte[] bytes)
+        {
+            getActivity().runOnUiThread(new RestaurantMenuFragment.BleScannerThread(bluetoothDevice));
+        }
+    }
+
+    public void finishReservation(final Long rsid) {
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected void onPreExecute ()
+            {
+
+            }
+            @Override
+            protected String doInBackground (Void...voids){
+                try {
+                    System.err.println("**** Calling rest web service");
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/CustomerReservation/finishReservation/" + rsid);
+                    Log.i("rsID", String.valueOf(rsid));
+                    // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
+                    HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                    InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                    StringBuilder stringBuilder = new StringBuilder();
+
+                    String line = null;
+
+                    while ((line = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(line);
+                    }
+                    return stringBuilder.toString();
+
+                } catch (Exception ex) {
+
+                    System.out.println("error calling API");
+                    //Toast.makeText(getApplicationContext(), "Error calling REST web service", Toast.LENGTH_LONG).show();
+
+                    ex.printStackTrace();
+                }
+                return "";
+            }
+
+            @Override
+            protected void onPostExecute (String jsonString){
+                try {
+                    JSONObject jsonObject = new JSONObject(jsonString);
+                    Boolean success = jsonObject.getBoolean("finishsuccess");
+                    if (isAdded()) {
+                        SharedPreferences sp = getContext().getSharedPreferences("FoodEmblem",MODE_PRIVATE);
+                        sp.edit().remove("AtTable").apply();
+                        sp.edit().remove("IsOrdering").apply();
+                        sp.edit().remove("FocusScanTable").apply();
+                        FragmentManager fragmentManager = getFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                        Fragment fragment = (Fragment) HomeFragment.class.newInstance();
+                        fragmentTransaction.replace(R.id.fragment_frame, fragment);
+                        fragmentTransaction.commit();
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+
+            }
+        }.execute();
+    }
+
+    public void callWaiter(final String tableId){
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected void onPreExecute ()
+            {
+
+            }
+            @Override
+            protected String doInBackground (Void...voids){
+                String data="";
+                try {
+                    System.err.println("**** Calling call waiter web service");
+                    System.err.println("-----Table requested " + tableId);
+                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/CallWaiter");
+                    // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
+                    HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+                    httpURLConnection.setRequestMethod("POST");
+                    httpURLConnection.setDoOutput(true);
+                    httpURLConnection.setRequestProperty("Content-Type", "application/json");
+                    httpURLConnection.setRequestProperty("Accept", "application/json");
+                    JSONObject callWaiterReq = new JSONObject();
+                    callWaiterReq.put("tableid",tableId);
+                    DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
+                    wr.writeBytes(callWaiterReq.toString());
+                    wr.flush();
+                    wr.close();
+                    InputStream in = httpURLConnection.getInputStream();
+                    InputStreamReader inputStreamReader = new InputStreamReader(in);
+
+                    int inputStreamData = inputStreamReader.read();
+                    while (inputStreamData != -1) {
+                        char current = (char) inputStreamData;
+                        inputStreamData = inputStreamReader.read();
+                        data += current;
+                    }
+
+                } catch (Exception ex) {
+
+                    System.out.println("error calling API");
+                    //Toast.makeText(getApplicationContext(), "Error calling REST web service", Toast.LENGTH_LONG).show();
+
+                    ex.printStackTrace();
+                }
+                return "";
+            }
+
+            @Override
+            protected void onPostExecute (String jsonString){
+                try {
+                    Toast.makeText(getActivity(),"Our server will attend to you shortly!", Toast.LENGTH_SHORT);
+                } catch (Exception ex) {
                     ex.printStackTrace();
                 }
 

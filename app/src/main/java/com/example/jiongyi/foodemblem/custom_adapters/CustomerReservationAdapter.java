@@ -37,7 +37,7 @@ public class CustomerReservationAdapter extends ArrayAdapter<CustomerReservation
             TextView tableNo = (TextView) convertView.findViewById(R.id.tableNo);
             TextView status = (TextView) convertView.findViewById(R.id.status);
             TextView restaurantName = (TextView) convertView.findViewById(R.id.restName);
-            TextView reservationTime = (TextView) convertView.findViewById(R.id.reservationTime);
+            //TextView reservationTime = (TextView) convertView.findViewById(R.id.reservationTime);
             // Populate the data into the template view using the data object
             try {
                 pax.setText(String.valueOf(customerReservation.getPax()));
@@ -47,8 +47,11 @@ public class CustomerReservationAdapter extends ArrayAdapter<CustomerReservation
                 if (status.getText().equals("Active")){
                     status.setTextColor(Color.parseColor("#00ff00"));
                 }
+                else {
+                    status.setTextColor(Color.parseColor("#FF0000"));
+                }
                 restaurantName.setText(customerReservation.getRestname());
-                reservationTime.setText((customerReservation.getReservationtime().toString()));
+                //reservationTime.setText((customerReservation.getReservationtime().toString()));
             }
             catch (Exception ex){
                 Log.e("Error" , ex.getMessage());
