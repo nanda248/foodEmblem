@@ -244,7 +244,7 @@ public class RestaurantMenuFragment extends Fragment {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/RestaurantDish/" + restaurantId);
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/RestaurantDish/" + restaurantId);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -356,7 +356,7 @@ public class RestaurantMenuFragment extends Fragment {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Restaurant/getRestaurantById/" + restaurantId);
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/Restaurant/getRestaurantById/" + restaurantId);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -408,7 +408,7 @@ public class RestaurantMenuFragment extends Fragment {
                     System.err.println("**** Calling rest web service");
                     SharedPreferences sp = getContext().getSharedPreferences("FoodEmblem",MODE_PRIVATE);
                     String email = sp.getString("UserEmail","");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/CustomerReservation/checkHasReservation/" + email);
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/CustomerReservation/checkHasReservation/" + email);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -571,7 +571,7 @@ public class RestaurantMenuFragment extends Fragment {
             protected String doInBackground (Void...voids){
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/CustomerReservation/finishReservation/" + rsid);
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/CustomerReservation/finishReservation/" + rsid);
                     Log.i("rsID", String.valueOf(rsid));
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
@@ -633,7 +633,7 @@ public class RestaurantMenuFragment extends Fragment {
                 try {
                     System.err.println("**** Calling call waiter web service");
                     System.err.println("-----Table requested " + tableId);
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/CallWaiter");
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/CallWaiter");
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     httpURLConnection.setRequestMethod("POST");

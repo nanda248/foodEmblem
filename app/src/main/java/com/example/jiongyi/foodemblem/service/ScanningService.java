@@ -143,7 +143,7 @@ public class ScanningService extends IntentService {
                 try {
                     String sensorid = major+"_"+minor;
                     Log.i("Webservice","**** Calling notification web service");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Promotion/retrieveRestaurantPromoFromBeacon/"+sensorid);
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/Promotion/retrieveRestaurantPromoFromBeacon/"+sensorid);
                     Log.i("WSurl",url.toString());
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
@@ -203,7 +203,7 @@ public class ScanningService extends IntentService {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/CustomerReservation/retrieveReservationSeating/" + email);
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/CustomerReservation/retrieveReservationSeating/" + email);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
@@ -238,6 +238,8 @@ public class ScanningService extends IntentService {
                         minor = Integer.parseInt(majorminor[1].toString());
                         Log.i("tablemajor", String.valueOf(major));
                         Log.i("tableminor", String.valueOf(minor));
+                        SharedPreferences sp = getSharedPreferences("FoodEmblem", MODE_PRIVATE);
+                        sp.edit().putBoolean("FocusScanTable", true).apply();
                         beaconManager = new BeaconManager(getApplicationContext());
                         beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
                             @Override
@@ -257,7 +259,6 @@ public class ScanningService extends IntentService {
                                 Log.i("Region", "Customer entered region");
                                 SharedPreferences sp = getSharedPreferences("FoodEmblem", MODE_PRIVATE);
                                 sp.edit().putBoolean("AtTable", true).apply();
-                                sp.edit().putBoolean("FocusScanTable", true).apply();
                                 int rerid = sp.getInt("activereservation",0);
                                 updatePax(rerid,1);
                             }
@@ -286,9 +287,8 @@ public class ScanningService extends IntentService {
             @Override
             protected String doInBackground(Void... voids) {
                 try {
-                    String sensorid = major+"_"+minor;
                     Log.i("Webservice","**** Calling notification web service");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Restaurant/updateSeatingPax/" + reservationid + "/" + pax);
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/Restaurant/updateSeatingPax/" + reservationid + "/" + pax);
                     Log.i("WSurl",url.toString());
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();

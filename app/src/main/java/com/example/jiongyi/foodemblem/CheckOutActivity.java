@@ -62,7 +62,7 @@ public class CheckOutActivity extends AppCompatActivity {
                 String data = "";
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Customer/AddCustomerOrder");
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/Customer/AddCustomerOrder");
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     httpURLConnection.setRequestMethod("POST");
@@ -134,7 +134,7 @@ public class CheckOutActivity extends AppCompatActivity {
             protected String doInBackground(Void... voids) {
                 try {
                     System.err.println("**** Calling rest web service");
-                    URL url = new URL("http://172.25.103.169:3446/FoodEmblemV1-war/Resources/Promotion/getPromotionByRestaurantId/" + restid);
+                    URL url = new URL("http://192.168.137.1:8080/FoodEmblemV1-war/Resources/Promotion/getPromotionByRestaurantId/" + restid);
                     // http://localhost:3446/FoodEmblemV1-war/Resources/Sensor/getFridgesByRestaurantId/1
                     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
                     InputStream inputStream = new BufferedInputStream(httpURLConnection.getInputStream());
